@@ -1,0 +1,9 @@
+numpy==1.26.4
+pandas<2.0
+matplotlib==3.9.2
+tdqm
+wheel
+setuptools
+twine
+pytest==4.4.1
+pytest-runner==4.4

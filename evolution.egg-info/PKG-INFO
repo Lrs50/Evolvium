@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Name: evolution
+Version: 0.1.0
+Summary: A straightforward implementation of the widely utilized Genetic Algorithm for optimization tasks.
+Author: Lucas Reis
+License-File: LICENSE
+Requires-Dist: numpy==1.26.4
+Requires-Dist: pandas<2.0
+Requires-Dist: matplotlib==3.9.2
+Requires-Dist: tdqm
