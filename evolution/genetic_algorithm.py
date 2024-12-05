@@ -1,8 +1,60 @@
 import numpy as np
 from tqdm import tqdm 
 import matplotlib.pyplot as plt
+from collections import OrderedDict
+import time
 
+class Cache(object):
+    def __init__(self,size):
+        self.storage = OrderedDict()
+        self.limit = size
+
+    def add(self,key,value):
+        
+        current_time = time.time()
+
+        self.storage[key] = {
+            "value" : value,
+            "timestamp": current_time
+        }
+
+        self.storage.move_to_end(key)
+        self._enforce_size_constraint()
+
+    def get(self,key):
+        current_time = time.time()
+
+        if key not in self.storage:
+            return None
+        
+        self.storage[key]['timestamp'] = current_time
+
+        item = self.storage[key]
+
+        self.storage.move_to_end(key)
+
+        return item["value"]
+    
+
+    def _enforce_size_constraint(self):
+        """Evict the oldest accessed item if the cache exceeds the max size."""
+        if len(self.storage) > self.limit:
+            # Remove the first item (oldest accessed item)
+            self.storage.popitem(last=False)
+
+    def __repr__(self):
+        """Display the current cache contents."""
+        return str({
+            key: {
+                "value": meta["value"],
+                "timestamp": meta["timestamp"]
+            }
+            for key, meta in self.storage.items()
+        })
+
+cache = Cache(size=1000)
 fitness_calls = 0
+total_fitness_calls = 0
 
 class Ind(object):
     def __init__(self,copy=False,**kwargs):
@@ -37,9 +89,16 @@ class Ind(object):
     @property
     def fitness(self):
         if self._fitness == None:
-            global fitness_calls
-            fitness_calls+=1
-            self._fitness = self.metric(self._gene)
+            global total_fitness_calls
+            total_fitness_calls+=1
+            cached_fitness = cache.get(str(self._gene))
+            if cached_fitness:
+                self._fitness = cached_fitness
+            else:
+                global fitness_calls
+                fitness_calls+=1
+                self._fitness = self.metric(self._gene)
+                cache.add(str(self._gene),self._fitness)
             
         return self._fitness
 
@@ -89,18 +148,30 @@ class Ind(object):
     def crossover(self,dad):
         crossover_type = self.kwargs.get('crossover_type')
 
-        new_gene = None
+        new_gene = []
         if crossover_type == "random mix":
             choice = np.random.randint(2, size=len(self._gene))
-            new_gene = []
             
             for i,c in enumerate(choice):
                 if c:
                     new_gene.append(self._gene[i])
                 else:
                     new_gene.append(dad._gene[i])
+        elif crossover_type == "split":
+
+            split_size = np.random.rand()
+
+            cut_point = int(len(self._gene)*split_size)
+
+            new_gene.extend(dad._gene[:cut_point])
+            new_gene.extend(self._gene[cut_point:])
+
+
         else:
             raise(f"{crossover_type} is not a Valid Crossover Type")
+
+        
+
 
         child = Ind(**self.kwargs)
         child._gene = new_gene
@@ -128,11 +199,17 @@ def _roulette(fitness_list,pop,n):
 
 def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0,verbose=True,**kwargs):
 
+    cache_size = kwargs.get("cache_size")
+    if cache_size:
+        cache.limit = cache_size
+
+
     global fitness_calls
+    global total_fitness_calls
     fitness_list_best = []
     fitness_list_avg  = []
     fitness_calls = 0
-
+    total_fitness_calls = 0
     pop = []
 
     pbar = tqdm(list(range(pop_size)))
@@ -160,7 +237,7 @@ def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0,verbose=
         fitness_list_avg.append(avg)
         fitness_list_best.append(best)
                 
-        pbar.set_description(f"AVG = {avg:.2e} | BEST = {best:.2e} | {best_global} |Total Fitness Calculations = {fitness_calls:5d}")
+        pbar.set_description(f"AVG = {avg:.2e} | BEST = {best:.2e} | {best_global} |Total Calls {fitness_calls:5d} | {total_fitness_calls-fitness_calls:5d}")
 
         survivors = _roulette(fitness_list.copy(), pop.copy(), pop_size - prole_size)
 
