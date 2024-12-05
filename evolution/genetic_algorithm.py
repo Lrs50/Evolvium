@@ -122,7 +122,6 @@ class Ind(object):
                 mutation_range = self.kwargs.get('mutation_range')     
                 mutation_range = (-1,1) if not mutation_range else mutation_range
                 low,high = mutation_range
-
                 i = np.random.randint(len(self._gene))
 
                 if gene_type == 'real':
@@ -147,16 +146,20 @@ class Ind(object):
 
     def crossover(self,dad):
         crossover_type = self.kwargs.get('crossover_type')
+        cromossome_size = self.kwargs.get('cromossome_size')
+        cromossome_size = 1 if not cromossome_size else cromossome_size
+
+        n_cromossomes = len(self._gene)//cromossome_size
 
         new_gene = []
         if crossover_type == "random mix":
-            choice = np.random.randint(2, size=len(self._gene))
+            choice = np.random.randint(2, size=len(n_cromossomes))
             
             for i,c in enumerate(choice):
                 if c:
-                    new_gene.append(self._gene[i])
+                    new_gene.extend(self._gene[i*cromossome_size:(i+1)*cromossome_size])
                 else:
-                    new_gene.append(dad._gene[i])
+                    new_gene.extend(self._gene[i*cromossome_size:(i+1)*cromossome_size])
         elif crossover_type == "split":
 
             split_size = np.random.rand()
