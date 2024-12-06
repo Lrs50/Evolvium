@@ -56,6 +56,12 @@ cache = Cache(size=1000)
 fitness_calls = 0
 total_fitness_calls = 0
 
+def _metric(candidate):
+    return 0.1
+
+def _repr(candidae):
+    return f"Nothing to Show"
+
 class Ind(object):
     def __init__(self,copy=False,**kwargs):
 
@@ -63,16 +69,17 @@ class Ind(object):
         self._gene           = None
         self._fitness        = None  
 
-        self.metric          = kwargs.get('metric')
-        self.repr            = kwargs.get('repr')
+        self.metric          = kwargs.get('metric') if kwargs.get('metric') else _metric
+        self.repr            = kwargs.get('repr')   if kwargs.get('repr')   else _repr
 
         if not copy:
             self.generate()
 
     def generate(self):
-        gene_type           = self.kwargs.get('gene_type')
-        gene_size           = self.kwargs.get('gene_size')
-        gene_upper_limit    = self.kwargs.get('gene_upper_limit')
+        kwargs = self.kwargs
+        gene_type           = kwargs.get('gene_type')        if kwargs.get('gene_type')        else 'integer'
+        gene_size           = kwargs.get('gene_size')        if kwargs.get('gene_size')        else 10
+        gene_upper_limit    = kwargs.get('gene_upper_limit') if kwargs.get('gene_upper_limit') else 10
 
         if gene_type == 'binary':
             self._gene = np.random.randint(2, size=gene_size)
@@ -112,20 +119,20 @@ class Ind(object):
     def mutate(self,prob = 1.0):
 
         if np.random.rand() < prob:
-
-            mutation_type       = self.kwargs.get('mutation_type')
-            gene_type           = self.kwargs.get('gene_type')
-            gene_upper_limit    = self.kwargs.get('gene_upper_limit')
+            kwargs = self.kwargs
+            mutation_type       = kwargs.get('mutation_type')    if kwargs.get('mutation_type')    else 'random range'
+            gene_type           = kwargs.get('gene_type')        if kwargs.get('gene_type')        else 'integer'
+            gene_upper_limit    = kwargs.get('gene_upper_limit') if kwargs.get('gene_upper_limit') else 10
+            mutation_range      = kwargs.get('mutation_range')   if kwargs.get('mutation_range')   else (-1,1) 
 
             if mutation_type == 'random range':
 
-                mutation_range = self.kwargs.get('mutation_range')     
-                mutation_range = (-1,1) if not mutation_range else mutation_range
                 low,high = mutation_range
                 i = np.random.randint(len(self._gene))
 
                 if gene_type == 'real':
                     self._gene[i] += np.random.rand()*(high - low) + low
+
                 else:
                     self._gene[i] += np.random.randint(low = low,high = high+1)
                     self._gene[i] %= (gene_upper_limit+1)
@@ -145,9 +152,9 @@ class Ind(object):
 
 
     def crossover(self,dad):
-        crossover_type = self.kwargs.get('crossover_type')
-        cromossome_size = self.kwargs.get('cromossome_size')
-        cromossome_size = 1 if not cromossome_size else cromossome_size
+        kwargs = self.kwargs
+        crossover_type  = kwargs.get('crossover_type')      if kwargs.get('crossover_type')  else 'split'
+        cromossome_size = kwargs.get('cromossome_size')     if kwargs.get('cromossome_size') else 1
 
         n_cromossomes = len(self._gene)//cromossome_size
 
@@ -200,11 +207,9 @@ def _roulette(fitness_list,pop,n):
     return [s.copy() for s in sur]
 
 
-def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0,verbose=True,**kwargs):
+def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0.5,verbose=True,**kwargs):
 
-    cache_size = kwargs.get("cache_size")
-    if cache_size:
-        cache.limit = cache_size
+    cache_size = kwargs.get("cache_size") if kwargs.get("cache_size") else 1000
 
 
     global fitness_calls
@@ -231,7 +236,7 @@ def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0,verbose=
         fitness_list = [ind.fitness for ind in pop]
         if best_global.fitness > pop[0].fitness:
             best_global = pop[0].copy() 
-            if best_global.fitness == stop:
+            if best_global.fitness <= stop:
                 break
         
         best = best_global.fitness
