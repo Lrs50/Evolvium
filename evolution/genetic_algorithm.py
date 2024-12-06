@@ -154,7 +154,7 @@ class Ind(object):
     
     def copy(self):
         c = Ind(copy=True,**self.kwargs)
-        c._gene           = self._gene
+        c._gene           = self._gene.copy()
         c._fitness        = self._fitness  
 
         return c
@@ -164,7 +164,7 @@ class Ind(object):
         kwargs = self.kwargs
         crossover_type  = kwargs.get('crossover_type')      if kwargs.get('crossover_type')  else 'split'
         cromossome_size = kwargs.get('cromossome_size')     if kwargs.get('cromossome_size') else 1
-
+        gene_type       = kwargs.get('gene_type')           if kwargs.get('gene_type')       else 'integer'
         n_cromossomes = len(self._gene)//cromossome_size
 
         new_gene = []
@@ -185,12 +185,17 @@ class Ind(object):
             new_gene.extend(dad._gene[:cut_point])
             new_gene.extend(self._gene[cut_point:])
 
+        elif crossover_type == 'avg':
+            if gene_type != 'real':
+                raise(f'{gene_type} is not a valid gene for {crossover_type} crossover!')
+            
+            new_gene = []
+
+            for i in range(len(self._gene)):
+                new_gene.append((dad._gene[i]+self._gene[i])/2)
 
         else:
             raise(f"{crossover_type} is not a Valid Crossover Type")
-
-        
-
 
         child = Ind(**self.kwargs)
         child._gene = new_gene
@@ -200,6 +205,26 @@ class Ind(object):
     def __repr__(self):
         return self.repr(self._gene)
     
+def slow_transition(x=0.01, y=0.1, n=1000, power=3):
+    """
+    Generates a sequence transitioning from x to y in n steps, slowing as it approaches y.
+    
+    Parameters:
+    x (float): Start value.
+    y (float): End value.
+    n (int): Number of steps.
+    power (float): Controls the slowness of the transition. Higher values mean slower transition near y.
+    
+    Returns:
+    list: A list of n values transitioning from x to y.
+    """
+    # Create a normalized scale from 0 to 1 with n points
+    t = np.linspace(0, 1, n)
+    # Apply a power function to slow the transition
+    t_slow = t**power
+    # Scale and shift to transition from x to y
+    transition = x + (y - x) * t_slow
+    return list(transition)
 
 def _roulette(fitness_list,pop,n):
 
@@ -208,7 +233,7 @@ def _roulette(fitness_list,pop,n):
 
     fitness_list = np.array(fitness_list,dtype=float)
 
-    info = 1/fitness_list
+    info = 1/(fitness_list+0.0000001)
 
     prob = np.array(info)/np.sum(info)
     sur = np.random.choice(pop, size=n, p=prob, replace=False).tolist()
@@ -216,10 +241,14 @@ def _roulette(fitness_list,pop,n):
     return [s.copy() for s in sur]
 
 
-def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0.5,verbose=True,**kwargs):
+def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0.5,verbose=False,**kwargs):
 
     cache_size = kwargs.get("cache_size") if kwargs.get("cache_size") else 1000
-
+    
+    if isinstance(mutation_rate, tuple):
+        mutation_list = slow_transition(mutation_rate[0],mutation_rate[1],max_gen)
+    else:
+        mutation_list = np.ones(max_gen)*mutation_rate
 
     global fitness_calls
     global total_fitness_calls
@@ -228,7 +257,7 @@ def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0.5,verbos
     fitness_calls = 0
     total_fitness_calls = 0
     pop = []
-
+    
     pbar = tqdm(list(range(pop_size)))
 
     for i in pbar:
@@ -241,7 +270,8 @@ def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0.5,verbos
     pbar = tqdm(list(range(max_gen)))
 
     for gen in pbar:
-    
+        
+        mutation_rate = mutation_list[gen]
         fitness_list = [ind.fitness for ind in pop]
         if best_global.fitness > pop[0].fitness:
             best_global = pop[0].copy() 
@@ -254,8 +284,11 @@ def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0.5,verbos
         fitness_list_avg.append(avg)
         fitness_list_best.append(best)
                 
-        pbar.set_description(f"AVG = {avg:.2e} | BEST = {best:.2e} | {best_global} |Total Calls {fitness_calls:5d} | {total_fitness_calls-fitness_calls:5d}")
-
+        if verbose:
+            pbar.set_description(f"AVG = {avg:.2e} | BEST = {best:.2e} | {best_global} |Total Calls {fitness_calls:5d} | {total_fitness_calls-fitness_calls:5d} | Mutation Rate = {mutation_rate:.2%}")
+        else:
+             pbar.set_description(f"AVG = {avg:.2e} | BEST = {best:.2e}")
+             
         survivors = _roulette(fitness_list.copy(), pop.copy(), pop_size - prole_size)
 
         new_gen = [s.mutate(mutation_rate) for s in survivors]
