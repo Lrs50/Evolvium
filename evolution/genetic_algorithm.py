@@ -80,18 +80,27 @@ class Ind(object):
         gene_type           = kwargs.get('gene_type')        if kwargs.get('gene_type')        else 'integer'
         gene_size           = kwargs.get('gene_size')        if kwargs.get('gene_size')        else 10
         gene_upper_limit    = kwargs.get('gene_upper_limit') if kwargs.get('gene_upper_limit') else 10
+        init_method         = kwargs.get('init_method')      if kwargs.get('init_method')      else "random" 
 
-        if gene_type == 'binary':
-            self._gene = np.random.randint(2, size=gene_size)
+        if init_method == 'mix':
+            init_method = "random" if np.random.rand()<0.5 else "zeros"
 
-        elif gene_type == 'integer':
-            self._gene = np.random.randint(gene_upper_limit, size=gene_size)
+        if init_method == "random":
+            if gene_type == 'binary':
+                self._gene = np.random.randint(2, size=gene_size)
 
-        elif gene_type == 'real':
-            self._gene = np.random.rand(gene_type)*gene_upper_limit
+            elif gene_type == 'integer':
+                self._gene = np.random.randint(gene_upper_limit, size=gene_size)
 
-        else:
-            raise(f"{gene_type} is not a Valid Gene Type")
+            elif gene_type == 'real':
+                self._gene = np.random.rand(gene_size)*gene_upper_limit
+
+            else:
+                raise(f"{gene_type} is not a Valid Gene Type")
+        elif init_method == "zeros":
+            self._gene = np.zeros(gene_size)
+        else: 
+            raise(f"{init_method} is not a Initialization Method")
         
     @property
     def fitness(self):
@@ -160,7 +169,7 @@ class Ind(object):
 
         new_gene = []
         if crossover_type == "random mix":
-            choice = np.random.randint(2, size=len(n_cromossomes))
+            choice = np.random.randint(2, size=n_cromossomes)
             
             for i,c in enumerate(choice):
                 if c:
@@ -197,7 +206,7 @@ def _roulette(fitness_list,pop,n):
     if n <= 0:
         return []
 
-    fitness_list = np.array(fitness_list)
+    fitness_list = np.array(fitness_list,dtype=float)
 
     info = 1/fitness_list
 
@@ -224,7 +233,7 @@ def run(max_gen=100,pop_size=30,prole_size=10,mutation_rate=1/30,stop=0.5,verbos
 
     for i in pbar:
         pop.append(Ind(**kwargs))
-        pbar.set_description(f"Loading Initial Population | Current Fitness = {pop[i].fitness:.2f}")
+        pbar.set_description(f"Loading Initial Population | Current Fitness = {pop[i].fitness:.2e}")
 
 
     pop.sort(key = lambda x: x.fitness)
