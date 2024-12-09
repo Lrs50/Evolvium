@@ -1,10 +1,10 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='evolution',
-    packages=find_packages('evolution'),
+    name='evolvium',
+    packages=find_packages('evolvium'),
     version='0.1.0',
-    description='A straightforward implementation of the widely utilized Genetic Algorithm for optimization tasks.',
+    description='An efficient and direct implementation of bioinspired algorithms designed for solving optimization problems.',
     author='Lucas Reis',
     install_requires=[  'numpy==1.26.4',
                         'pandas<2.0',

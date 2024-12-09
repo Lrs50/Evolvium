@@ -1,0 +1,9 @@
+LICENSE
+README.md
+setup.py
+evolvium.egg-info/PKG-INFO
+evolvium.egg-info/SOURCES.txt
+evolvium.egg-info/dependency_links.txt
+evolvium.egg-info/requires.txt
+evolvium.egg-info/top_level.txt
+tests/test_myfunctions.py
