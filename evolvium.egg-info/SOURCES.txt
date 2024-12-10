@@ -1,9 +1,12 @@
 LICENSE
 README.md
 setup.py
+evolvium/__init__.py
+evolvium/genetic_algorithm.py
 evolvium.egg-info/PKG-INFO
 evolvium.egg-info/SOURCES.txt
 evolvium.egg-info/dependency_links.txt
 evolvium.egg-info/requires.txt
 evolvium.egg-info/top_level.txt
+tests/__init__.py
 tests/test_myfunctions.py

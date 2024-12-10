@@ -1,16 +1,21 @@
 from setuptools import find_packages, setup
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(
     name='evolvium',
-    packages=find_packages('evolvium'),
-    version='0.1.0',
+    version='0.0.1.1',
     description='An efficient and direct implementation of bioinspired algorithms designed for solving optimization problems.',
     author='Lucas Reis',
-    install_requires=[  'numpy==1.26.4',
-                        'pandas<2.0',
-                        'matplotlib==3.9.2',
-                        'tdqm'],
-    setup_requires=[    'pytest-runner'],
-    tests_require=[     'pytest==4.4.1'],
-    test_suite='tests',
+    author_email='lucaspook12@gmail.com',
+    license='GNU GENERAL PUBLIC LICENSE',
+    long_description=long_description, 
+    long_description_content_type="text/markdown",
+    packages=find_packages(),  # Automatically include all packages
+    install_requires=[  
+        'numpy>=1.26.4',
+        'matplotlib>=3.9.2',
+        'tqdm>=0.0.1',
+    ],
 )
