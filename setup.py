@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='evolvium',
-    version='0.0.1.1',
+    version='0.0.1.2',
     description='An efficient and direct implementation of bioinspired algorithms designed for solving optimization problems.',
     author='Lucas Reis',
     author_email='lucaspook12@gmail.com',

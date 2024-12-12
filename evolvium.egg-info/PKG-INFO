@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: evolvium
-Version: 0.0.1.1
+Version: 0.0.1.2
 Summary: An efficient and direct implementation of bioinspired algorithms designed for solving optimization problems.
 Author: Lucas Reis
 Author-email: lucaspook12@gmail.com
@@ -11,7 +11,7 @@ Requires-Dist: numpy>=1.26.4
 Requires-Dist: matplotlib>=3.9.2
 Requires-Dist: tqdm>=0.0.1
 
-# Evolvium
+# [Evolvium](https://test.pypi.org/project/evolvium/)
 
 ## Genetic Algorithm
 

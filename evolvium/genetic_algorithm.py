@@ -4,12 +4,6 @@ import matplotlib.pyplot as plt
 from collections import OrderedDict
 import time
 
-"""
-added no limits on range in gene option
-initialization range 
-
-"""
-
 class Cache(object):
     def __init__(self, size=100):
         '''
@@ -154,6 +148,7 @@ class Ind(object):
         - `gene_size`: Specifies the number of genes in the genome.
         - `gene_upper_limit`: Sets the upper limit for gene values.
         - `init_method`: Defines the initialization method.
+        - `gene_init_range`: Sets the range for gene values initialization.
         '''
         kwargs = self.kwargs
         gene_type = kwargs.get('gene_type', 'integer')
