@@ -4,6 +4,12 @@ import matplotlib.pyplot as plt
 from collections import OrderedDict
 import time
 
+"""
+added no limits on range in gene option
+initialization range 
+
+"""
+
 class Cache(object):
     def __init__(self, size=100):
         '''
@@ -152,8 +158,8 @@ class Ind(object):
         kwargs = self.kwargs
         gene_type = kwargs.get('gene_type', 'integer')
         gene_size = kwargs.get('gene_size', 10)
-        gene_upper_limit = kwargs.get('gene_upper_limit', 10)
         init_method = kwargs.get('init_method', 'random')
+        gene_init_range = kwargs.get('gene_init_range', 10)
 
         if init_method == 'mix':
             init_method = "random" if np.random.rand() < 0.5 else "zeros"
@@ -162,9 +168,9 @@ class Ind(object):
             if gene_type == 'binary':
                 self._gene = np.random.randint(2, size=gene_size)
             elif gene_type == 'integer':
-                self._gene = np.random.randint(gene_upper_limit, size=gene_size)
+                self._gene = np.random.randint(gene_init_range, size=gene_size)
             elif gene_type == 'real':
-                self._gene = np.random.rand(gene_size) * gene_upper_limit
+                self._gene = np.random.rand(gene_size) * gene_init_range
             else:
                 raise ValueError(f"{gene_type} is not a valid gene type")
         elif init_method == "zeros":
@@ -220,10 +226,15 @@ class Ind(object):
                 low, high = mutation_range
                 i = np.random.randint(len(self._gene))
                 if gene_type == 'real':
-                    self._gene[i] += np.random.rand() * (high - low) + low
+                    if gene_upper_limit > 0:
+                        self._gene[i] += (np.random.rand() * (high - low) + low)%gene_upper_limit
+                    else:
+                        self._gene[i] += (np.random.rand() * (high - low) + low)
                 else:
                     self._gene[i] += np.random.randint(low, high + 1)
-                    self._gene[i] %= (gene_upper_limit + 1)
+                    if gene_upper_limit>0:
+                        self._gene[i] %= (gene_upper_limit + 1)
+                    
             else:
                 raise ValueError(f"{mutation_type} is not a valid mutation type")
 
@@ -375,6 +386,8 @@ def run(max_gen=100, pop_size=30, prole_size=10, mutation_rate=1/30, stop=0.5, v
     
     # Cache size, useful for optimization or preventing recalculating fitness
     cache_size = kwargs.get("cache_size", 1000)
+    debug_func = kwargs.get("debug_func", None)
+
 
     # Determine mutation rate progression (if using a tuple, gradually change mutation rate)
     if isinstance(mutation_rate, tuple):
@@ -396,17 +409,23 @@ def run(max_gen=100, pop_size=30, prole_size=10, mutation_rate=1/30, stop=0.5, v
     for i in pbar:
         # Create individuals for the initial population
         pop.append(Ind(**kwargs))
-        pbar.set_description(f"Loading Initial Population | Current Fitness = {pop[i].fitness:.2e}")
+        pbar.set_description(f"Loading Initial Population | {pop[i]} |Current Fitness = {pop[i].fitness:.2e}")
 
     # Sort population by fitness (ascending)
     pop.sort(key=lambda x: x.fitness)
     
     # Track the best individual globally
     best_global = pop[0].copy()
+    if verbose and debug_func:
+        debug_func(best_global.gene)
+
 
     pbar = tqdm(list(range(max_gen)))
 
     for gen in pbar:
+
+        diversity = {str(p) for p in pop}
+
         # Update mutation rate for this generation
         mutation_rate = mutation_list[gen]
 
@@ -416,7 +435,8 @@ def run(max_gen=100, pop_size=30, prole_size=10, mutation_rate=1/30, stop=0.5, v
         # Update the best global individual if a better one is found
         if best_global.fitness > pop[0].fitness:
             best_global = pop[0].copy()
-            
+            if verbose and debug_func:
+                debug_func(best_global.gene)
             # Stop early if the best fitness is below the stop threshold
             if best_global.fitness <= stop:
                 break
@@ -429,7 +449,7 @@ def run(max_gen=100, pop_size=30, prole_size=10, mutation_rate=1/30, stop=0.5, v
 
         # Display progress bar with additional information (verbose)
         if verbose:
-            pbar.set_description(f"AVG = {avg:.2e} | BEST = {best:.2e} | {best_global} |Total Calls {fitness_calls:5d} | {total_fitness_calls-fitness_calls:5d} | Mutation Rate = {mutation_rate:.2%}")
+            pbar.set_description(f"AVG = {avg:.2e} | BEST = {best:.2e} | D = {len(diversity)/pop_size:.2f} |{best_global} |Calls {fitness_calls:5d} | {total_fitness_calls-fitness_calls:5d} | Mutation Rate = {mutation_rate:.2%}")
         else:
             pbar.set_description(f"AVG = {avg:.2e} | BEST = {best:.2e}")
 
@@ -456,7 +476,7 @@ def run(max_gen=100, pop_size=30, prole_size=10, mutation_rate=1/30, stop=0.5, v
         plt.figure(figsize=(20, 6))
         plt.suptitle("Genetic Algorithm Evolution Graph", fontsize=25)
         plt.plot(fitness_list_best, '--', color="lightsteelblue", label="Best")
-        plt.plot(fitness_list_avg, '--', color="lightcoral", label="Average")
+        #plt.plot(fitness_list_avg, '--', color="lightcoral", label="Average")
         plt.xlabel("Generation")
         plt.ylabel("Fitness")
         plt.legend()
