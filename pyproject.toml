@@ -1,0 +1,18 @@
+[project]
+name = "evolvium"
+version = "0.1.0"
+description = "A high-performance genetic algorithm library"
+readme = "README.md"
+authors = [
+    { name = "lrs50", email = "lucaspook12@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.6",
+    "numpy>=2.3.3",
+    "tqdm>=4.67.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
